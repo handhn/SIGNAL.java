@@ -1,8 +1,9 @@
-import java.util.ArrayList;
-import java.util.List;
-import java.net.URL;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Signal {
     private List<Double> closingPrices;
@@ -11,27 +12,51 @@ public class Signal {
         this.closingPrices = new ArrayList<>();
     }
 
-    public void updateFromURL(String urlString) throws Exception {
+    public void updateFromMarketstack(String accessKey, String symbol) throws Exception {
+        String urlString = "http://api.marketstack.com/v1/eod?access_key=" + accessKey + "&symbols=" + symbol;
         URL url = new URL(urlString);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+
+        // Lire la réponse
+        BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        StringBuilder response = new StringBuilder();
         String line;
         while ((line = reader.readLine()) != null) {
-            String[] data = line.split(",");
-            if (data.length >= 2) {
-                addClosingPrice(Double.parseDouble(data[1]));
-            }
+            response.append(line);
         }
         reader.close();
+
+        // Traiter la réponse pour extraire les prix de clôture
+        parseClosingPrices(response.toString());
     }
 
-
-    public void addClosingPrice(double closingPrice) {
-        closingPrices.add(closingPrice);
+    private void parseClosingPrices(String jsonResponse) {
+        // Simplification : extraction manuelle des prix de clôture
+        String[] lines = jsonResponse.split("\\},\\{"); // Diviser par objets JSON
+        for (String line : lines) {
+            if (line.contains("\"close\":")) {
+                String[] parts = line.split("\"close\":");
+                if (parts.length > 1) {
+                    String priceStr = parts[1].split(",")[0]; // Obtenir le prix de clôture
+                    double closingPrice = Double.parseDouble(priceStr);
+                    closingPrices.add(closingPrice);
+                }
+            }
+        }
     }
 
     public List<Double> getClosingPrices() {
         return new ArrayList<>(closingPrices);
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Closing Prices:\n");
+        for (int i = 0; i < closingPrices.size(); i++) {
+            sb.append(String.format("Day %d: %.2f\n", i + 1, closingPrices.get(i)));
+        }
+        return sb.toString();
+    }
 }
-
-
