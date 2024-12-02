@@ -11,14 +11,14 @@ public class Signal {
     public Signal() {
         this.closingPrices = new ArrayList<>();
     }
-
+	// cnx réseau
     public void updateFromMarketstack(String accessKey, String symbol) throws Exception {
         String urlString = "http://api.marketstack.com/v1/eod?access_key=" + accessKey + "&symbols=" + symbol;
         URL url = new URL(urlString);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("GET");
+        conn.setRequestMethod("GET"); // requette serveur 
 
-        // Lire la réponse
+        // Lire la réponse et réception des données
         BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
         StringBuilder response = new StringBuilder();
         String line;
